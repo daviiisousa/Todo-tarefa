@@ -55,5 +55,5 @@ yarn
 cd db
 
 # Rode o json-server (porta padrão 3000)
-npx json-server --watch db.json --port 3000
+npm run server
 
