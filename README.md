@@ -35,7 +35,7 @@ Este projeto é uma aplicação web para gerenciamento de tarefas (to-dos), cons
 
 ```bash
 # Clone o repositório
-git clone https://github.com/daviiisousa/todo-tarefa
+git clone https://github.com/daviiisousa/Todo-tarefa.git
 
 # Acesse a pasta do projeto
 cd seu-repo
@@ -50,6 +50,7 @@ yarn
 
 ## Backend 👨‍💻
 
+```bash
 # Acesse a pasta db
 cd db
 
