@@ -1,6 +1,6 @@
 export type Todos = {
-    id: string,
+    id?: string,
     titulo: string,
     descricao: string,
-    concluido: boolean
+    concluido?: boolean
 }
