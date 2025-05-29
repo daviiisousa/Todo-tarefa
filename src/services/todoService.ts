@@ -26,7 +26,7 @@ export async function postTodos(event: FormEvent, data: { titulo: string, descri
 
         return response.data
     } catch (error) {
-        if(error) toast.error("erro ao enviar tarefa: ", error)
+        if (error) toast.error("erro ao enviar tarefa: ", error)
         console.error(error)
     }
 }
