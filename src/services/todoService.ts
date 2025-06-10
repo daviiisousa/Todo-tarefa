@@ -19,8 +19,7 @@ export async function postTodos(event: FormEvent, data: { titulo: string, descri
 
     try {
         if (!data.titulo || !data.descricao) {
-            toast.error("É necessario preencher os campos de forma correta")
-            return
+            return toast.error("É necessario preencher os campos de forma correta")
         }
         const response = await api.post("/todos", data)
 
@@ -42,6 +41,9 @@ export async function deleteTodo(id: string | undefined) {
 
 export async function editTodo(id: string | undefined, descricao: string) {
     try {
+        if (!descricao) {
+            return toast.error("A descricao e necessaria")
+        }
         const response = await api.patch(`/todos/${id}`, { descricao })
         return response.data
     } catch (error) {

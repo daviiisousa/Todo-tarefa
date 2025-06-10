@@ -8,6 +8,9 @@ import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { TodoForm } from "./todoForm";
+import { useTodoStore } from "@/store/todo";
+import toast from "react-hot-toast";
 
 
 export function TodoCard() {
@@ -33,8 +36,32 @@ export function TodoCard() {
         setEditId("");
     }
 
-    function savedEdit(id: string | undefined) {
-        editTodo(id, textoEditado);
+    async function savedEdit(id: string | undefined) {
+        if (!id) return;
+
+        const sucesso = await editTodo(id, textoEditado);
+
+        if (!textoEditado.trim()) {
+            toast.error("Descrição não pode estar vazia");
+            return;
+        }
+
+
+        if (sucesso) {
+            setTodos(prev =>
+                prev.map(todo =>
+                    todo.id === id ? { ...todo, descricao: textoEditado } : todo
+                )
+            );
+            setEditId(""); // isso aqui é importante
+        }
+    }
+
+
+
+    function handleDelete(id: string | undefined) {
+        deleteTodo(id)
+        setTodos(prev => prev.filter((todo) => todo.id !== id))
     }
 
     async function toggleConcluido(id: string | undefined, value: boolean | "indeterminate") {
@@ -53,77 +80,88 @@ export function TodoCard() {
             // Opcional: voltar o estado anterior se deu erro
         }
     }
+    const { todo } = useTodoStore()
+
 
     return (
-        <section className="md:grid grid-cols-2 gap-3 lg:grid-cols-3">
-            {todos && todos.length > 0 ? todos.map(todo => (
-                <Card className="my-4" key={todo.id}>
-                    <CardHeader className="flex justify-between items-center">
-                        <CardTitle className="text-2xl text-zinc-800">{todo.titulo}</CardTitle>
-                        <Label className="cursor-pointer">
-                            <Checkbox
-                                checked={todo.concluido}
-                                onCheckedChange={(value) => toggleConcluido(todo.id, value)}
-                            />
-                            Concluido
-                        </Label>
-                    </CardHeader>
-                    <CardContent>
-                        {todo.id === editId ? (
-                            <div>
-                                <Textarea
-                                    autoFocus
-                                    value={textoEditado}
-                                    onChange={({ target }) => setTextoEditado(target.value)}
+        <div>
+            <h1 className="md:text-6xl text-5xl text-center text-purple-500 font-bold">Todo List</h1>
+            <p className="my-4 text-zinc-500 text-2xl flex justify-center items-center gap-2">Organize suas
+                <span className="text-purple-500 flex items-center">Tarefeas <img src="/favicon.png" alt="" /> </span>
+            </p>
+            <TodoForm setTodos={setTodos} />
+            <p>Voce tem {todo.length} tarefas</p>
+            <div className="border-2 border-purple-500 w-full my-4 rounded-lg"></div>
+            <section className="md:grid grid-cols-2 gap-3 lg:grid-cols-3">
+                {todos && todos.length > 0 ? todos.map(todo => (
+                    <Card className="my-4" key={todo.id}>
+                        <CardHeader className="flex justify-between items-center">
+                            <CardTitle className="text-2xl text-zinc-800">{todo.titulo}</CardTitle>
+                            <Label className="cursor-pointer">
+                                <Checkbox
+                                    checked={todo.concluido}
+                                    onCheckedChange={(value) => toggleConcluido(todo.id, value)}
                                 />
-                                <div className="flex gap-5 items-center mt-4">
-                                    <Check
-                                        onClick={() => savedEdit(todo.id)}
-                                        color="#00c951"
-                                        className="cursor-pointer"
+                                Concluido
+                            </Label>
+                        </CardHeader>
+                        <CardContent>
+                            {todo.id === editId ? (
+                                <div>
+                                    <Textarea
+                                        autoFocus
+                                        value={textoEditado}
+                                        onChange={({ target }) => setTextoEditado(target.value)}
                                     />
-                                    <Ban
-                                        onClick={cancelEdit}
-                                        color="#fb2c36"
-                                        className="cursor-pointer"
-                                    />
+                                    <div className="flex gap-5 items-center mt-4">
+                                        <Check
+                                            onClick={() => savedEdit(todo.id)}
+                                            color="#00c951"
+                                            className="cursor-pointer"
+                                        />
+                                        <Ban
+                                            onClick={cancelEdit}
+                                            color="#fb2c36"
+                                            className="cursor-pointer"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <p className="text-lg">{todo.descricao}</p>
-                        )}
-                    </CardContent>
-                    <CardFooter className="flex gap-2">
-                        <AlertDialog>
-                            <AlertDialogTrigger className="bg-purple-800 text-lg cursor-pointer flex items-center rounded-md text-white py-1 gap-1 px-2">
-                                Excluir <Trash size={16} />
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Tem certeza que vc quer deletar essa tarefa?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Essa ação era eliminar essa tarefas da sua lista
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteTodo(todo.id)}>Continuar</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                        <Button
-                            onClick={() => handleEdit(todo.id, todo.descricao)}
-                            className="border-2 border-purple-500 text-purple-500 bg-transparent text-lg cursor-pointer flex items-center hover:text-white hover:border-purple-900"
-                        >
-                            Editar <Pencil />
-                        </Button>
-                    </CardFooter>
-                </Card>
-            )) : (
-                <h1 className="text-4xl text-purple-500 font-bold text-center col-span-3">
-                    Nenhuma tarefa pra fazer
-                </h1>
-            )}
-        </section>
+                            ) : (
+                                <p className="text-lg">{todo.descricao}</p>
+                            )}
+                        </CardContent>
+                        <CardFooter className="flex gap-2">
+                            <AlertDialog>
+                                <AlertDialogTrigger className="bg-purple-800 text-lg cursor-pointer flex items-center rounded-md text-white py-1 gap-1 px-2">
+                                    Excluir <Trash size={16} />
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Tem certeza que vc quer deletar essa tarefa?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Essa ação era eliminar essa tarefas da sua lista
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(todo.id)}>Continuar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                            <Button
+                                onClick={() => handleEdit(todo.id, todo.descricao)}
+                                className="border-2 border-purple-500 text-purple-500 bg-transparent text-lg cursor-pointer flex items-center hover:text-white hover:border-purple-900"
+                            >
+                                Editar <Pencil />
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                )) : (
+                    <h1 className="text-4xl text-purple-500 font-bold text-center col-span-3">
+                        Nenhuma tarefa pra fazer
+                    </h1>
+                )}
+            </section>
+        </div>
     );
 }
