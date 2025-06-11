@@ -24,7 +24,7 @@ export function TodoForm({ setTodos }: { setTodos: React.Dispatch<React.SetState
             toast.error("É necessário preencher os campos de forma correta");
             return;
         }
-        postTodos(e, data)
+        postTodos(data)
         setTodos(prev => [...prev, data])
         setNewTodo({ titulo: '', descricao: '' });
     }

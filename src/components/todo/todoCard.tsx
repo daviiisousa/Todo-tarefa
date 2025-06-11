@@ -11,34 +11,41 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { TodoForm } from "./todoForm";
 import { useTodoStore } from "@/store/todo";
 import toast from "react-hot-toast";
-
+import { Loading } from "../common/loading";
 
 export function TodoCard() {
     const [todos, setTodos] = useState<Todos[]>([]);
     const [editId, setEditId] = useState<string | undefined>('');
     const [textoEditado, setTextoEditado] = useState('');
+    const [loading, setLoading] = useState(true)
 
+    //pegando as tarefas e passando para o array
     useEffect(() => {
         const fetchData = async () => {
-            const data = await getTodos();
-            setTodos(data);
+            try {
+                const data = await getTodos();
+                setTodos(data);
+            } catch (error) {
+                toast.error('erro ao buscar tarefa')
+            } finally {
+                setLoading(false)
+            }
         };
 
         fetchData();
     }, []);
 
+    //essa funçao e responsavel por mandar o id e desc quando ativar o modo de edicao
     function handleEdit(id: string | undefined, descricao: string) {
+        if (!descricao) {
+            toast.error("prencha o campo de descricao")
+            return
+        }
         setEditId(id);
         setTextoEditado(descricao);
     }
 
-    function cancelEdit() {
-        setEditId("");
-    }
-
     async function savedEdit(id: string | undefined) {
-        if (!id) return;
-
         const sucesso = await editTodo(id, textoEditado);
 
         if (!textoEditado.trim()) {
@@ -46,18 +53,16 @@ export function TodoCard() {
             return;
         }
 
-
         if (sucesso) {
             setTodos(prev =>
                 prev.map(todo =>
                     todo.id === id ? { ...todo, descricao: textoEditado } : todo
                 )
             );
-            setEditId(""); // isso aqui é importante
+            //desativa o modo de edicao
+            setEditId("");
         }
     }
-
-
 
     function handleDelete(id: string | undefined) {
         deleteTodo(id)
@@ -65,6 +70,7 @@ export function TodoCard() {
     }
 
     async function toggleConcluido(id: string | undefined, value: boolean | "indeterminate") {
+        // verifica se o value da tarefa foi marcada como concluida 
         const isConcluido = value === true;
 
         setTodos(prevTodos =>
@@ -74,10 +80,10 @@ export function TodoCard() {
         );
 
         try {
+            // faz a req para o back passando o valor do conluido
             await updateTodoConcluido(id, isConcluido);
         } catch (error) {
             console.error("Erro ao atualizar concluído:", error);
-            // Opcional: voltar o estado anterior se deu erro
         }
     }
     const { todo } = useTodoStore()
@@ -92,8 +98,10 @@ export function TodoCard() {
             <TodoForm setTodos={setTodos} />
             <p>Voce tem {todo.length} tarefas</p>
             <div className="border-2 border-purple-500 w-full my-4 rounded-lg"></div>
-            <section className="md:grid grid-cols-2 gap-3 lg:grid-cols-3">
-                {todos && todos.length > 0 ? todos.map(todo => (
+            <section className="md:grid grid-cols-2 gap-3 lg:grid-cols-3 ">
+                {loading ? (
+                    <Loading />
+                ) : todos && todos.length > 0 ? todos.map(todo => (
                     <Card className="my-4" key={todo.id}>
                         <CardHeader className="flex justify-between items-center">
                             <CardTitle className="text-2xl text-zinc-800">{todo.titulo}</CardTitle>
@@ -120,7 +128,7 @@ export function TodoCard() {
                                             className="cursor-pointer"
                                         />
                                         <Ban
-                                            onClick={cancelEdit}
+                                            onClick={() => setEditId("")}
                                             color="#fb2c36"
                                             className="cursor-pointer"
                                         />
