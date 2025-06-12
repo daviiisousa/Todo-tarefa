@@ -6,7 +6,8 @@ import { postTodos } from "@/services/todoService";
 import { Todos } from "@/types/global";
 import toast from "react-hot-toast";
 
-export function TodoForm({ setTodos }: { setTodos: React.Dispatch<React.SetStateAction<Todos[]>> }) {
+export function TodoForm(
+    { setTodos, setIsSubminting }: { setTodos: React.Dispatch<React.SetStateAction<Todos[]>>, setIsSubminting: React.Dispatch<React.SetStateAction<boolean>> }) {
     const [newTodo, setNewTodo] = useState({
         titulo: '',
         descricao: ''
@@ -20,13 +21,20 @@ export function TodoForm({ setTodos }: { setTodos: React.Dispatch<React.SetState
 
     function handleSubmit(e: FormEvent, data: { titulo: string, descricao: string }) {
         e.preventDefault()
-        if (!newTodo.titulo || !newTodo.descricao) {
-            toast.error("É necessário preencher os campos de forma correta");
-            return;
+        setIsSubminting(true)
+        try {
+            if (!newTodo.titulo || !newTodo.descricao) {
+                toast.error("É necessário preencher os campos de forma correta");
+                return;
+            }
+            postTodos(data)
+            setTodos(prev => [...prev, data])
+            setNewTodo({ titulo: '', descricao: '' });
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsSubminting(false)
         }
-        postTodos(data)
-        setTodos(prev => [...prev, data])
-        setNewTodo({ titulo: '', descricao: '' });
     }
 
 

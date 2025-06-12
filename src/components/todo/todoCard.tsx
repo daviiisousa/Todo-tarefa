@@ -12,12 +12,14 @@ import { TodoForm } from "./todoForm";
 import { useTodoStore } from "@/store/todo";
 import toast from "react-hot-toast";
 import { Loading } from "../common/loading";
+import clsx from "clsx";
 
 export function TodoCard() {
     const [todos, setTodos] = useState<Todos[]>([]);
     const [editId, setEditId] = useState<string | undefined>('');
     const [textoEditado, setTextoEditado] = useState('');
     const [loading, setLoading] = useState(true)
+    const [isSubminting, setIsSubminting] = useState(false)
 
     //pegando as tarefas e passando para o array
     useEffect(() => {
@@ -46,27 +48,43 @@ export function TodoCard() {
     }
 
     async function savedEdit(id: string | undefined) {
-        const sucesso = await editTodo(id, textoEditado);
+        setIsSubminting(true)
+        try {
+            const sucesso = await editTodo(id, textoEditado);
 
-        if (!textoEditado.trim()) {
-            toast.error("Descrição não pode estar vazia");
-            return;
+            if (!textoEditado.trim()) {
+                toast.error("Descrição não pode estar vazia");
+                return;
+            }
+
+            if (sucesso) {
+                setTodos(prev =>
+                    prev.map(todo =>
+                        todo.id === id ? { ...todo, descricao: textoEditado } : todo
+                    )
+                );
+                //desativa o modo de edicao
+                setEditId("");
+            }
+        } catch (error) {
+            console.error('erro ao atualizar tarefa')
+        } finally {
+            setIsSubminting(false)
         }
 
-        if (sucesso) {
-            setTodos(prev =>
-                prev.map(todo =>
-                    todo.id === id ? { ...todo, descricao: textoEditado } : todo
-                )
-            );
-            //desativa o modo de edicao
-            setEditId("");
-        }
     }
 
     function handleDelete(id: string | undefined) {
-        deleteTodo(id)
-        setTodos(prev => prev.filter((todo) => todo.id !== id))
+        setIsSubminting(true)
+        try {
+            deleteTodo(id)
+            setTodos(prev => prev.filter((todo) => todo.id !== id))
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsSubminting(false)
+        }
+
     }
 
     async function toggleConcluido(id: string | undefined, value: boolean | "indeterminate") {
@@ -92,10 +110,10 @@ export function TodoCard() {
     return (
         <div>
             <h1 className="md:text-6xl text-5xl text-center text-purple-500 font-bold">Todo List</h1>
-            <p className="my-4 text-zinc-500 text-2xl flex justify-center items-center gap-2">Organize suas
-                <span className="text-purple-500 flex items-center">Tarefeas <img src="/favicon.png" alt="" /> </span>
+            <p className="my-4 text-zinc-500 text-2xl flex justify-center items-center gap-2 w-full flex-wrap">Organize suas
+                <span className="text-purple-500 flex items-center">Tarefas <img src="/favicon.png" alt="logo" /> </span>
             </p>
-            <TodoForm setTodos={setTodos} />
+            <TodoForm setIsSubminting={setIsSubminting} setTodos={setTodos} />
             <p>Voce tem {todo.length} tarefas</p>
             <div className="border-2 border-purple-500 w-full my-4 rounded-lg"></div>
             <section className="md:grid grid-cols-2 gap-3 lg:grid-cols-3 ">
@@ -103,8 +121,8 @@ export function TodoCard() {
                     <Loading />
                 ) : todos && todos.length > 0 ? todos.map(todo => (
                     <Card className="my-4" key={todo.id}>
-                        <CardHeader className="flex justify-between items-center">
-                            <CardTitle className="text-2xl text-zinc-800">{todo.titulo}</CardTitle>
+                        <CardHeader className="flex justify-between items-center w-full flex-wrap">
+                            <CardTitle className="text-2xl text-zinc-800 break-words w-full md:w-fit">{todo.titulo}</CardTitle>
                             <Label className="cursor-pointer">
                                 <Checkbox
                                     checked={todo.concluido}
@@ -122,11 +140,14 @@ export function TodoCard() {
                                         onChange={({ target }) => setTextoEditado(target.value)}
                                     />
                                     <div className="flex gap-5 items-center mt-4">
-                                        <Check
-                                            onClick={() => savedEdit(todo.id)}
-                                            color="#00c951"
-                                            className="cursor-pointer"
-                                        />
+                                        <button
+                                            disabled={isSubminting}
+                                            className={
+                                                clsx("cursor-pointer",
+                                                    isSubminting ? "text-zinc-400" : "text-[#00c951]"
+                                                )}>
+                                            <Check onClick={() => savedEdit(todo.id)} />
+                                        </button>
                                         <Ban
                                             onClick={() => setEditId("")}
                                             color="#fb2c36"
@@ -135,12 +156,12 @@ export function TodoCard() {
                                     </div>
                                 </div>
                             ) : (
-                                <p className="text-lg">{todo.descricao}</p>
+                                <p className="text-lg break-words">{todo.descricao}</p>
                             )}
                         </CardContent>
-                        <CardFooter className="flex gap-2">
+                        <CardFooter className="flex items-center flex-wrap gap-2">
                             <AlertDialog>
-                                <AlertDialogTrigger className="bg-purple-800 text-lg cursor-pointer flex items-center rounded-md text-white py-1 gap-1 px-2">
+                                <AlertDialogTrigger disabled={isSubminting} className="bg-purple-800 text-lg cursor-pointer flex items-center justify-center rounded-md text-white py-1 gap-1 px-2 w-full sm:w-fit">
                                     Excluir <Trash size={16} />
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -157,8 +178,9 @@ export function TodoCard() {
                                 </AlertDialogContent>
                             </AlertDialog>
                             <Button
+                                disabled={isSubminting}
                                 onClick={() => handleEdit(todo.id, todo.descricao)}
-                                className="border-2 border-purple-500 text-purple-500 bg-transparent text-lg cursor-pointer flex items-center hover:text-white hover:border-purple-900"
+                                className="border-2 border-purple-500 text-purple-500 bg-transparent text-lg cursor-pointer flex items-center hover:text-white hover:border-purple-900 w-full sm:w-fit"
                             >
                                 Editar <Pencil />
                             </Button>
