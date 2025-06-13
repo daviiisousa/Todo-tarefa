@@ -2,17 +2,16 @@ import { ChangeEvent, FormEvent, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { postTodos } from "@/services/todoService";
-import { Todos } from "@/types/global";
 import toast from "react-hot-toast";
+import { useTodoStore } from "@/store/todoStore";
 
-export function TodoForm(
-    { setTodos, setIsSubminting }: { setTodos: React.Dispatch<React.SetStateAction<Todos[]>>, setIsSubminting: React.Dispatch<React.SetStateAction<boolean>> }) {
+export function TodoForm() {
     const [newTodo, setNewTodo] = useState({
         titulo: '',
         descricao: ''
     })
 
+    const { addTodo } = useTodoStore()
 
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
         const { id, value } = event.target
@@ -21,23 +20,14 @@ export function TodoForm(
 
     function handleSubmit(e: FormEvent, data: { titulo: string, descricao: string }) {
         e.preventDefault()
-        setIsSubminting(true)
-        try {
-            if (!newTodo.titulo || !newTodo.descricao) {
-                toast.error("É necessário preencher os campos de forma correta");
-                return;
-            }
-            postTodos(data)
-            setTodos(prev => [...prev, data])
-            setNewTodo({ titulo: '', descricao: '' });
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setIsSubminting(false)
+
+        if (!newTodo.titulo || !newTodo.descricao) {
+            toast.error("É necessário preencher os campos de forma correta");
+            return;
         }
+        addTodo(data)
+        setNewTodo({ titulo: '', descricao: '' });
     }
-
-
 
     return (
         <form className="md:grid grid-cols-3 gap-3 items-center"
