@@ -46,14 +46,4 @@ npm install
 yarn 
 
 ```
----
-
-## Backend 👨‍💻
-
-```bash
-# Acesse a pasta db
-cd db
-
-# Rode o json-server (porta padrão 3000)
-npm run server
 
